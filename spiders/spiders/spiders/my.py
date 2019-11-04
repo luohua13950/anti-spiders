@@ -14,7 +14,7 @@ class MySpider(scrapy.Spider):
     start_urls = ['https://www.maoyan.com/board/1']
     base_font_dir = "..\\..\\data\\maoyan_data\\base.woff"
     data_dir = "..\\..\\data\\maoyan_data\\"
-
+    
     def parse(self, response):
         print("开始冒烟")
         html = response.text
