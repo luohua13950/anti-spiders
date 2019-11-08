@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+    <script type="text/javascript" src="http://d3js.org/d3.v5.min.js"></script
+        <script src="https://cdn.bootcss.com/echarts/4.3.0-rc.1/echarts.min.js"></script>
+</head>
+<body>
+<p>ha</p>
+<p>gf</p>
+<p>hj</p>
+<script>
+    var p=d3.select("body").selectAll("p")
+    var str = "dadada"
+    p.datum(str).text(function(d,i){
+        if (i ==2)
+        return i+":"+d
+    })
+</script>
+</body>
+</html>

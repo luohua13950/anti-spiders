@@ -40,7 +40,7 @@ class MySpider(scrapy.Spider):
             return 0
         print("下载字体文件")
         filename = os.path.join(self.data_dir, font_url[0].split("/")[-1])
-        font_ret = urllib.request.urlretrieve(font_url[0], filename=filename)
+        urllib.request.urlretrieve(font_url[0], filename=filename)
         return filename
 
     def get_font(self,filename):
@@ -70,7 +70,6 @@ class MySpider(scrapy.Spider):
                 if self.cmp(b_coordinates, coordinates, bk, k):
                     dst_corresponding[k] = base_corresponding[bk]
                     print(k, ":", base_corresponding[bk])
-                    continue
         return dst_corresponding
 
     def cmp(self, base, target, *args):
