@@ -1,5 +1,5 @@
 #touch .gitignore
 #ºöÂÔÅäÖÃÎÄ¼ş
-*.ini
+ip_pool/*.ini
 
 .idea/*
