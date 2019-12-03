@@ -1,0 +1,5 @@
+#touch .gitignore
+#ºöÂÔÅäÖÃÎÄ¼ş
+*.ini
+
+.idea/*
