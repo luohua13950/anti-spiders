@@ -3,3 +3,4 @@
 ip_pool/*.ini
 
 .idea/*
+data/*

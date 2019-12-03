@@ -95,7 +95,7 @@ class BaseClass(type):
 
 
 class Crawl(metaclass=BaseClass):
-    def __init__(self, valid_period=30):
+    def __init__(self, valid_period=20):
         db_info = Config().db_config
         self.rc = RedisClient(**db_info)
         self.base = datetime.timedelta(days=valid_period)
@@ -144,8 +144,9 @@ class Crawl(metaclass=BaseClass):
                     logger.info("当前ip校验时间已超过30天,不再继续爬取后面！")
                     break
                 page += 1
-                time.sleep(self.sleep_sec)
                 logger.info("快代理睡眠{}秒".format(self.sleep_sec))
+                time.sleep(self.sleep_sec)
+
             except Exception as e:
                 logger.error(e)
                 break
@@ -181,8 +182,8 @@ class Crawl(metaclass=BaseClass):
                     logger.info("当前ip校验时间已超过30天,不再继续爬取后面！")
                     break
                 page += 1
-                time.sleep(self.sleep_sec)
                 logger.info("西刺睡眠{}秒".format(self.sleep_sec))
+                time.sleep(self.sleep_sec)
             except Exception as e:
                 logger.error(e)
                 break
