@@ -7,6 +7,7 @@ import datetime
 import time
 from lxml import etree
 from threading import Thread
+import threading
 from multiprocessing import Process
 
 
@@ -87,7 +88,8 @@ class BaseClass(type):
         attrs["cw_func"] = []
         count = 0
         for k, v in attrs.items():
-            if "crawl_" in k:
+            #if "crawl_" in k:
+            if k.startswith("crawl_"):
                 attrs["cw_func"].append(k)
                 count += 1
         attrs["func_count"] = count
@@ -98,6 +100,7 @@ class Crawl(metaclass=BaseClass):
     def __init__(self, valid_period=20):
         db_info = Config().db_config
         self.rc = RedisClient(**db_info)
+        self.valid_period = valid_period
         self.base = datetime.timedelta(days=valid_period)
         self.sleep_sec = 30
 
@@ -114,7 +117,7 @@ class Crawl(metaclass=BaseClass):
     @staticmethod
     def get_page(url, page):
         resp = requests.get(url=url.format(page), headers=headers)
-        logger.info("当前爬取第{}页".format(page))
+        logger.info("{}:当前爬取第{}页".format(threading.current_thread().name,page))
         x_page = etree.HTML(resp.text)
         x_tr = x_page.xpath("//tbody//tr")
         if len(x_tr) <1:
@@ -141,7 +144,7 @@ class Crawl(metaclass=BaseClass):
             try:
                 x_tr = self.get_page(url, page)
                 if not self._crawl_kuaidaili(x_tr):
-                    logger.info("当前ip校验时间已超过30天,不再继续爬取后面！")
+                    logger.info("{}:当前ip校验时间已超过{}天,不再继续爬取后面！".format(threading.current_thread().name,self.valid_period))
                     break
                 page += 1
                 logger.info("快代理睡眠{}秒".format(self.sleep_sec))
@@ -179,7 +182,7 @@ class Crawl(metaclass=BaseClass):
             try:
                 x_tr = self.get_page(url, page)
                 if not self._crawl_xici(x_tr):
-                    logger.info("当前ip校验时间已超过30天,不再继续爬取后面！")
+                    logger.info("{}:当前ip校验时间已超过{}天,不再继续爬取后面！".format(threading.current_thread().name,self.valid_period))
                     break
                 page += 1
                 logger.info("西刺睡眠{}秒".format(self.sleep_sec))
@@ -212,8 +215,15 @@ class Crawl(metaclass=BaseClass):
         return True
 
     def run(self):
-        pass
-
+        #th_kuaidali = Thread(target=self.crawl_kuaidaili,args=())
+        th_list = []
+        for cw in self.cw_func:
+            fn = eval("self.{}".format(cw))
+            th_list.append(Thread(target=fn,args=(),name="thread-{}".format(cw)))
+            logger.info("创建线程...")
+        for th in th_list:
+            logger.info("启动线程:{}...".format(th.name))
+            th.start()
 
 class CheckValid():
     def __init__(self):
@@ -223,6 +233,6 @@ class CheckValid():
 if __name__ == '__main__':
     cw = Crawl()
     # cw.crawl_kuaidaili()
-    cw.crawl_xici()
+    cw.run()
 
 
