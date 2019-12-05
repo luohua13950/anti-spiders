@@ -82,6 +82,10 @@ class RedisClient():
             logger.info("移除成功{}个".format(ret))
         return ret
 
+    def batch(self,name = "proxies",start = 0,end = 10,desc = False,withscores = False):
+        ret = self.redis.zrange(name,start,end,desc=desc,withscores=withscores)
+        return ret
+
 
 class BaseClass(type):
     def __new__(cls, name, base, attrs):
