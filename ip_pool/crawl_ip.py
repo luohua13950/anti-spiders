@@ -251,9 +251,5 @@ class CheckValid():
 
 if __name__ == '__main__':
     cw = Crawl()
-    # cw.crawl_kuaidaili()
-    #cw.run()
-    a = [[1,2,3],[2,6]]
-    b = [j for i in a for j in i ]
-    print(b)
+    cw.run()
 
