@@ -34,7 +34,7 @@ class Config():
 class RedisClient():
     MAX_SCORE = 100
     MIN_SCORE = 0
-    DECR_SCORE = -5
+    DECR_SCORE = -10
     INIT_SCORE = 100
     LIMITED = 10000
 
@@ -53,12 +53,20 @@ class RedisClient():
         return ret
 
     def decr(self, proxies, score=DECR_SCORE, name="proxies"):
+        """
+        ret 为当前代理的分数
+        :param proxies:
+        :param score:
+        :param name:
+        :return:
+        """
         ret = self.redis.zincrby(name, score, proxies, )
         if ret > 0:
-            logger.info("{} 当前分数大于0".format(proxies))
+            logger.info("{} 当前分数为{},大于0".format(proxies,ret))
         else:
-            logger.info("{} 当前分数小于0，移除此ip".format(proxies))
+            logger.info("{} 当前分数{},小于0，移除此ip".format(proxies,ret))
             self.remove(proxies=proxies)
+        return ret
 
     def remove(self, proxies, name="proxies"):
         ret = self.redis.zrem(name, proxies)
@@ -66,6 +74,10 @@ class RedisClient():
             logger.info("{}移除成功".format(proxies))
         else:
             logger.error("{}移除失败".format(proxies))
+        return ret
+
+    def score(self, proxies, name="proxies"):
+        ret = self.redis.zscore(name=name,value=proxies)
         return ret
 
     def count(self, name="proxies"):
@@ -82,8 +94,8 @@ class RedisClient():
             logger.info("移除成功{}个".format(ret))
         return ret
 
-    def batch(self,name = "proxies",start = 0,end = 10,desc = False,withscores = False):
-        ret = self.redis.zrange(name,start,end,desc=desc,withscores=withscores)
+    def batch(self, name="proxies", start=0, end=10, desc=False, withscores=False):
+        ret = self.redis.zrange(name, start, end, desc=desc, withscores=withscores)
         return ret
 
 
@@ -92,7 +104,7 @@ class BaseClass(type):
         attrs["cw_func"] = []
         count = 0
         for k, v in attrs.items():
-            #if "crawl_" in k:
+            # if "crawl_" in k:
             if k.startswith("crawl_"):
                 attrs["cw_func"].append(k)
                 count += 1
@@ -121,11 +133,11 @@ class Crawl(metaclass=BaseClass):
     @staticmethod
     def get_page(url, page):
         resp = requests.get(url=url.format(page), headers=headers)
-        logger.info("{}:当前爬取第{}页".format(threading.current_thread().name,page))
+        logger.info("{}:当前爬取第{}页".format(threading.current_thread().name, page))
         x_page = etree.HTML(resp.text)
         x_tr = x_page.xpath("//tbody//tr")
-        if len(x_tr) <1:
-          x_tr = x_page.xpath("//table//tr")
+        if len(x_tr) < 1:
+            x_tr = x_page.xpath("//table//tr")
         return x_tr
 
     def add_proxies(self, ip, port, http, str_time):
@@ -148,14 +160,15 @@ class Crawl(metaclass=BaseClass):
             try:
                 x_tr = self.get_page(url, page)
                 if not self._crawl_kuaidaili(x_tr):
-                    logger.info("{}:当前ip校验时间已超过{}天,不再继续爬取后面！".format(threading.current_thread().name,self.valid_period))
+                    logger.info(
+                        "{}:当前ip校验时间已超过{}天,不再继续爬取后面！".format(threading.current_thread().name, self.valid_period))
                     break
                 page += 1
                 logger.info("快代理睡眠{}秒".format(self.sleep_sec))
                 time.sleep(self.sleep_sec)
 
             except Exception as e:
-                logger.error(e)
+                logger.error("快代理爬取过程发生错误：%s" % e)
                 break
 
 
@@ -175,7 +188,7 @@ class Crawl(metaclass=BaseClass):
                 if not self.add_proxies(ip, port, http, str_time):
                     return False
             except Exception as e:
-                logger.error(e)
+                logger.error("快代理解析页面发生错误：%s" % e)
                 continue
         return True
 
@@ -186,13 +199,14 @@ class Crawl(metaclass=BaseClass):
             try:
                 x_tr = self.get_page(url, page)
                 if not self._crawl_xici(x_tr):
-                    logger.info("{}:当前ip校验时间已超过{}天,不再继续爬取后面！".format(threading.current_thread().name,self.valid_period))
+                    logger.info(
+                        "{}:当前ip校验时间已超过{}天,不再继续爬取后面！".format(threading.current_thread().name, self.valid_period))
                     break
                 page += 1
                 logger.info("西刺睡眠{}秒".format(self.sleep_sec))
                 time.sleep(self.sleep_sec)
             except Exception as e:
-                logger.error(e)
+                logger.error("西刺代理爬取过程发生错误：%s" % e)
                 break
 
     def _crawl_xici(self, x_tr):
@@ -208,26 +222,27 @@ class Crawl(metaclass=BaseClass):
                 str_time = _str_time[0] if _str_time else ""
                 if not all([ip, port, http]):
                     continue
-                str_time = "20" +str_time
+                str_time = "20" + str_time
                 if not self.add_proxies(ip, port, http, str_time):
                     logger.info("当前ip验证时间为{}".format(str_time))
                     return False
 
             except Exception as e:
-                logger.error(e)
+                logger.error("西刺代理解析页面发生错误：%s" % e)
                 continue
         return True
 
     def run(self):
-        #th_kuaidali = Thread(target=self.crawl_kuaidaili,args=())
+        # th_kuaidali = Thread(target=self.crawl_kuaidaili,args=())
         th_list = []
         for cw in self.cw_func:
             fn = eval("self.{}".format(cw))
-            th_list.append(Thread(target=fn,args=(),name="thread-{}".format(cw)))
+            th_list.append(Thread(target=fn, args=(), name="thread-{}".format(cw)))
             logger.info("创建线程...")
         for th in th_list:
             logger.info("启动线程:{}...".format(th.name))
             th.start()
+
 
 class CheckValid():
     def __init__(self):
@@ -237,6 +252,8 @@ class CheckValid():
 if __name__ == '__main__':
     cw = Crawl()
     # cw.crawl_kuaidaili()
-    cw.run()
-
+    #cw.run()
+    a = [[1,2,3],[2,6]]
+    b = [j for i in a for j in i ]
+    print(b)
 
